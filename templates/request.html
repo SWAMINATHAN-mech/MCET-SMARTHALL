@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Block a slot' if kind == 'block' else 'Request a venue' }}{% endblock %}
+{% import "_macros.html" as m with context %}
+{% block content %}
+<div class="mid">
+  <div class="card pad accent">
+    <p class="label">{{ 'Hall supervisor' if kind == 'block' else 'New booking' }}</p>
+    <h1 class="mt-1" style="font-size:1.7rem">{{ 'Block a slot' if kind == 'block' else 'Request a venue' }}</h1>
+    <p class="muted small mt-2">
+      {% if kind == 'block' %}Mark the venue unavailable (maintenance, exams, reserved). Overlapping pending requests are declined automatically.
+      {% else %}Pick a venue and time. Availability is checked as you type; the hall supervisor confirms the request.{% endif %}
+    </p>
+
+    {% if not venues %}
+      <p class="mt-6 small red">No venues available{{ ' — ask the admin to assign halls to you' if kind == 'block' }}.</p>
+    {% else %}
+    <form class="stack mt-6" method="post" id="bookingForm" data-kind="{{ kind }}" data-check-url="{{ url_for('api_check') }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="kind" value="{{ kind }}">
+      <label class="field"><span class="label">Venue</span>
+        <select class="input" name="venue_id" id="f-venue">
+          {% for v in venues %}
+            <option value="{{ v.id }}" {{ 'selected' if form.venue_id|string == v.id|string }}
+                    data-manage="{{ 1 if v.id in managed_ids else 0 }}">{{ v.name }} — {{ v.block }} (seats {{ v.capacity }})</option>
+          {% endfor %}
+        </select>
+        <span class="xs muted" id="f-facilities"></span>
+      </label>
+      <div class="grid g3">
+        <label class="field"><span class="label">Date</span>
+          <input class="input" type="date" name="date" id="f-date" required value="{{ form.date }}" {% if me.role != 'admin' %}min="{{ today }}"{% endif %}></label>
+        <div class="field"><span class="label">From</span>
+          {{ m.time12('start', 'f-start', form.start) }}</div>
+        <div class="field"><span class="label">To</span>
+          {{ m.time12('end', 'f-end', form.end) }}</div>
+      </div>
+
+      <div id="verdict" class="verdict ok" aria-live="polite">Checking availability…</div>
+
+      <label class="field"><span class="label">{{ 'Reason' if kind == 'block' else 'Event title' }}</span>
+        <input class="input" name="event_title" required minlength="3" maxlength="160" value="{{ form.event_title or '' }}"
+               placeholder="{{ 'e.g. Projector repair' if kind == 'block' else 'e.g. AI Workshop by IEEE Student Branch' }}"></label>
+
+      {% if kind == 'request' %}
+      <div class="grid g3">
+        <label class="field"><span class="label">Expected attendees</span>
+          <input class="input" type="number" min="1" name="attendees" id="f-att" required value="{{ form.attendees or 50 }}"></label>
+        <label class="field"><span class="label">Department / club</span>
+          <select class="input" name="department">
+            <option value="">—</option>
+            {% for d in departments %}<option value="{{ d.code }}" {{ 'selected' if form.department == d.code }}>{{ d.code }} — {{ d.name }}</option>{% endfor %}
+          </select></label>
+        <label class="field"><span class="label">Faculty in-charge</span>
+          <input class="input" name="faculty_incharge" placeholder="Staff coordinator" {{ 'required' if me.role == 'student' }} value="{{ form.faculty_incharge or '' }}"></label>
+      </div>
+      <div class="grid g2">
+        <label class="field"><span class="label">Purpose</span>
+          <textarea class="input" name="purpose" rows="3" maxlength="1000" placeholder="What the event is about, agenda, who it is for…">{{ form.purpose or '' }}</textarea></label>
+        <label class="field"><span class="label">Requirements</span>
+          <textarea class="input" name="requirements" rows="3" maxlength="1000" placeholder="Equipment needed (mic, projector), seating arrangement…">{{ form.requirements or '' }}</textarea></label>
+      </div>
+      <label class="check-row" id="direct-row" style="display:none">
+        <input type="checkbox" name="direct" value="1"> Allot directly (you manage this venue — skip the approval step)</label>
+      {% else %}
+        <input type="hidden" name="attendees" id="f-att" value="1">
+      {% endif %}
+
+      {% if error %}<div class="flash error" style="margin:0">{{ error }}</div>{% endif %}
+      <div class="row" style="justify-content:flex-end">
+        <a class="btn-outline" href="{{ url_for('availability', date=form.date) }}">Cancel</a>
+        <button class="btn" id="submitBtn" type="submit">{{ 'Block slot' if kind == 'block' else 'Submit request' }}</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+

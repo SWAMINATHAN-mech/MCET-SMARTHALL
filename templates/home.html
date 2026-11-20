@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m with context %}
+{% block title %}Smart Hall & Venue Availability Management System{% endblock %}
+{% block content %}
+<section class="hero" style="background-image:url('{{ url_for('static', filename='campus.jpg') }}')">
+  <div class="content">
+    <span class="logo-chip"><img src="{{ url_for('static', filename='mcet-logo.jpg') }}" alt="MCET"></span>
+    <h1 class="mt-4">Smart Hall <em>&amp;</em> Venue<br>Availability</h1>
+    <p class="mt-3" style="max-width:640px">One live timetable for every seminar hall, auditorium, lab and ground on campus.
+      Departments see what is free, request what they need, and the system makes double-booking impossible.</p>
+    <div class="row mt-6">
+      <a class="btn big" href="{{ url_for('availability') }}">Check availability →</a>
+      <a class="btn-outline big" href="#login" style="font-family:var(--font-display);font-size:1.2rem;padding:.7rem 1.4rem">Choose your login</a>
+    </div>
+  </div>
+</section>
+
+<div class="ticker mt-6" role="marquee">
+  <div class="mega"><span>📣</span></div>
+  <div class="track"><span class="move">
+    Book seminar halls, auditoriums and labs online — <b>no more double bookings</b> · Requests are approved by the hall
+    supervisor · Clashes are blocked automatically · {{ venues|length }} venues on the live timetable ·
+    Students: sign in with your student ID
+  </span></div>
+</div>
+
+<section id="login" class="mt-10" style="scroll-margin-top:100px">
+  <p class="kicker">Welcome</p>
+  <h2 class="mt-1">Sign in to continue</h2>
+  <p class="muted mt-1">Choose the login that matches your role.</p>
+  <div class="grid g3 mt-4">
+    {% for role in ['student', 'supervisor', 'admin'] %}{% set r = ROLE_META[role] %}
+    <div class="card lift login-card glowable">
+      <div class="row"><span class="icon-circle">{{ r.icon }}</span><h3 style="font-size:1.55rem">{{ r.label }} Login</h3></div>
+      <p class="muted mt-3">{{ r.blurb }}</p>
+      <ul class="checks">{% for p in r.points %}<li>{{ p }}</li>{% endfor %}</ul>
+      <div class="foot">
+        <a class="btn block" href="{{ url_for('login', role=role) }}">Sign in as {{ r.label }}</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="mt-10 bignum">
+  <div class="n">{{ venues|length }}</div>
+  <div>
+    <h3>Halls &amp; Venues</h3>
+    <p class="muted" style="font-size:1.15rem">on one live timetable — auditoriums, seminar halls, labs, conference rooms and grounds.</p>
+  </div>
+</section>
+
+<section class="grid g2 mt-8">
+  <div class="card pad top-red lift">
+    <h3 class="red">The problem</h3>
+    <p class="mt-3" style="line-height:1.7">Information about hall and venue availability is hard to track when
+      multiple departments need the same facilities. Requests travel by phone, paper and WhatsApp; two events land in the
+      same seminar hall; nobody knows which halls are actually free.</p>
+  </div>
+  <div class="card pad accent lift">
+    <h3>What this system does</h3>
+    <ul class="checks">
+      <li>Centralised, live availability grid for every venue</li>
+      <li>Online reservation requests with event details</li>
+      <li>Database-enforced conflict prevention — no double booking</li>
+      <li>Hall supervisor approval workflow with notes</li>
+      <li>Maintenance / reserved slot blocking</li>
+      <li>Suggests other free halls that fit your crowd</li>
+      <li>Utilisation reports by venue and department, Excel export</li>
+    </ul>
+  </div>
+</section>
+
+<section class="mt-10">
+  <p class="kicker">Simple process</p>
+  <h2 class="mt-1">How a booking works</h2>
+  <ol class="grid g5 mt-4" style="list-style:none;padding:0;margin-bottom:0">
+    {% for h, d in [("Check", "Open the live availability grid for any date."),
+                    ("Request", "Pick a free slot, add event details and attendees."),
+                    ("Auto-check", "Clashes, over-capacity and out-of-hours requests are refused instantly."),
+                    ("Review", "The hall supervisor approves or rejects with a note."),
+                    ("Confirmed", "The slot locks on the timetable; overlapping requests are auto-declined.")] %}
+    <li class="card pad-sm lift glowable">
+      <span class="step-no">0{{ loop.index }}</span>
+      <p class="mt-2" style="font-family:var(--font-display);font-weight:700;font-size:1.3rem">{{ h }}</p>
+      <p class="small muted mt-1">{{ d }}</p>
+    </li>
+    {% endfor %}
+  </ol>
+</section>
+
+<section class="mt-10">
+  <div class="row between">
+    <div><p class="kicker">Campus facilities</p><h2 class="mt-1">Venues on campus</h2>
+      <p class="muted small mt-1">Sign in to see their live availability.</p></div>
+    {{ m.legend() }}
+  </div>
+  <div class="grid g3 mt-4">
+    {% for v in venues %}
+    <a class="card pad-sm lift glowable" href="{{ url_for('availability', q=v.code) }}" style="text-decoration:none">
+      <div class="row between" style="align-items:flex-start;flex-wrap:nowrap">
+        <div>
+          <p style="font-family:var(--font-display);font-weight:700;font-size:1.2rem">{{ v.name }}</p>
+          <p class="xs muted">{{ VENUE_TYPES.get(v.venue_type, v.venue_type) }} · {{ v.block }}</p>
+        </div>
+        <span class="pill">👥 {{ v.capacity }}</span>
+      </div>
+      {% if v.facilities %}<p class="xs muted mt-2">{{ v.facilities.replace(', ', ' · ') }}</p>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

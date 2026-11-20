@@ -1,0 +1,23 @@
+
+# Python environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Secrets
+.secret_key*
+.env
+.env.*
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Development files
+*.log
+.DS_Store
